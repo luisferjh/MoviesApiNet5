@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MoviesAPI.DTOs;
@@ -56,24 +57,24 @@ namespace MoviesAPI.Controllers
         {
             var actor = _mapper.Map<Actor>(actorCreacionDTO);
 
-            if (actorCreacionDTO.Foto != null)
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    await actorCreacionDTO.Foto.CopyToAsync(memoryStream);
-                    var contenido = memoryStream.ToArray();
-                    var extension = Path.GetExtension(actorCreacionDTO.Foto.FileName);
-                    actor.Foto = await almacenadorArchivos.GuardarArchivo(contenido, extension, contenedor,                     
-                        actorCreacionDTO.Foto.ContentType);
-                }
-            }
+            // if (actorCreacionDTO.Foto != null)
+            // {
+            //     using (var memoryStream = new MemoryStream())
+            //     {
+            //         await actorCreacionDTO.Foto.CopyToAsync(memoryStream);
+            //         var contenido = memoryStream.ToArray();
+            //         var extension = Path.GetExtension(actorCreacionDTO.Foto.FileName);
+            //         actor.Foto = await almacenadorArchivos.GuardarArchivo(contenido, extension, contenedor,                     
+            //             actorCreacionDTO.Foto.ContentType);
+            //     }
+            // }
 
-            _context.Add(actor);
-           await _context.SaveChangesAsync();
-            var actorDTO = _mapper.Map<ActorDTO>(actor);
+            // _context.Add(actor);
+            //await _context.SaveChangesAsync();
+            //var actorDTO = _mapper.Map<ActorDTO>(actor);
 
-            return new CreatedAtRouteResult("obtenerActor", new { id = actorDTO.Id }, actorCreacionDTO);
-
+            // return new CreatedAtRouteResult("obtenerActor", new { id = actorDTO.Id }, actorCreacionDTO);
+            return NoContent();
         }
 
         [HttpPut("{id}")]
@@ -106,6 +107,37 @@ namespace MoviesAPI.Controllers
             return NoContent();
         }
 
+        [HttpPatch("{id}")]
+        public async Task<ActionResult> Patch(int id, [FromBody] JsonPatchDocument<ActorPatchDTO> patchDocument)
+        {
+            if (patchDocument == null)
+            {
+                return BadRequest();
+            }
+
+            var entidadDB = await _context.Actores.FirstOrDefaultAsync(f => f.Id == id);
+
+            if (entidadDB == null)
+            {
+                return NotFound();
+            }
+
+            var entidadDTO = _mapper.Map<ActorPatchDTO>(entidadDB);
+
+            patchDocument.ApplyTo(entidadDTO, ModelState);
+
+            var esValido = TryValidateModel(entidadDTO);
+            if (!esValido)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _mapper.Map(entidadDTO, entidadDB);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
