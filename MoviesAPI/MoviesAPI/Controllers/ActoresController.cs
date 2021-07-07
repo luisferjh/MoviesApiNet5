@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MoviesAPI.DTOs;
 using MoviesAPI.Entities;
 using MoviesAPI.Services;
+using MoviesAPI.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,9 +31,11 @@ namespace MoviesAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ActorDTO>>> Get()
+        public async Task<ActionResult<List<ActorDTO>>> Get([FromQuery] PaginacionDTO paginacionDTO)
         {
-            var actores = await _context.Actores.ToListAsync();
+            var queryable = _context.Actores.AsQueryable();
+            await HttpContext.InsertarParametrosPaginacion(queryable, paginacionDTO.CantidadRegistrosPorPagina);
+            var actores = await queryable.Paginar(paginacionDTO).ToListAsync();
             var dtos = _mapper.Map<List<ActorDTO>>(actores);
             return dtos;
         }
@@ -57,24 +60,23 @@ namespace MoviesAPI.Controllers
         {
             var actor = _mapper.Map<Actor>(actorCreacionDTO);
 
-            // if (actorCreacionDTO.Foto != null)
-            // {
-            //     using (var memoryStream = new MemoryStream())
-            //     {
-            //         await actorCreacionDTO.Foto.CopyToAsync(memoryStream);
-            //         var contenido = memoryStream.ToArray();
-            //         var extension = Path.GetExtension(actorCreacionDTO.Foto.FileName);
-            //         actor.Foto = await almacenadorArchivos.GuardarArchivo(contenido, extension, contenedor,                     
-            //             actorCreacionDTO.Foto.ContentType);
-            //     }
-            // }
+            if (actorCreacionDTO.Foto != null)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await actorCreacionDTO.Foto.CopyToAsync(memoryStream);
+                    var contenido = memoryStream.ToArray();
+                    var extension = Path.GetExtension(actorCreacionDTO.Foto.FileName);
+                    actor.Foto = await almacenadorArchivos.GuardarArchivo(contenido, extension, contenedor,
+                        actorCreacionDTO.Foto.ContentType);
+                }
+            }
 
-            // _context.Add(actor);
-            //await _context.SaveChangesAsync();
-            //var actorDTO = _mapper.Map<ActorDTO>(actor);
+            _context.Add(actor);
+            await _context.SaveChangesAsync();
+            var actorDTO = _mapper.Map<ActorDTO>(actor);
 
-            // return new CreatedAtRouteResult("obtenerActor", new { id = actorDTO.Id }, actorCreacionDTO);
-            return NoContent();
+            return new CreatedAtRouteResult("obtenerActor", new { id = actorDTO.Id }, actorCreacionDTO);
         }
 
         [HttpPut("{id}")]
