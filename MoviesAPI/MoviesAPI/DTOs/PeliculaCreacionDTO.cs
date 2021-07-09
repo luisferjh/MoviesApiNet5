@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using MoviesAPI.Helpers;
 using MoviesAPI.Validaciones;
 using System;
 using System.Collections.Generic;
@@ -19,6 +21,10 @@ namespace MoviesAPI.DTOs
         [TipoArchivoValidacion(GrupoTipoArchivo.Imagen)]
         public IFormFile Poster { get; set; }
 
+        [ModelBinder(BinderType =typeof(TypeBinder<List<int>>))]
         public List<int> GenerosIds { get; set; }
+
+        [ModelBinder(BinderType = typeof(TypeBinder<List<ActorPeliculasCreacionDTO>>))]
+        public List<ActorPeliculasCreacionDTO> Actores { get; set; }
     }
 }
