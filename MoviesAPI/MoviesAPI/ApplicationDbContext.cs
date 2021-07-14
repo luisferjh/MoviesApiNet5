@@ -116,13 +116,18 @@ namespace MoviesAPI
             modelBuilder.Entity<PeliculasGeneros>()
                 .HasKey(x => new { x.GeneroId, x.PeliculaId });
 
+            modelBuilder.Entity<PeliculasSalasCine>()
+                .HasKey(x => new { x.SalaCineId, x.PeliculaId });
+
             base.OnModelCreating(modelBuilder);
         }
 
         public DbSet<Genero> Generos { get; set; }
         public DbSet<Actor> Actores { get; set; }
         public DbSet<Pelicula> Peliculas { get; set; }
+        public DbSet<SalaDeCine> SalasDeCine { get; set; }
         public DbSet<PeliculasActores> peliculasActores { get; set; }
         public DbSet<PeliculasGeneros> peliculasGeneros { get; set; }
+        public DbSet<PeliculasSalasCine> PeliculasSalasCines { get; set; }
     }
 }
